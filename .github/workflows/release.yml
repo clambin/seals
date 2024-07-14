@@ -16,4 +16,4 @@ jobs:
   release:
     needs:
       - test
-    uses: clambin/workflows/.github/workflows/release.yaml@docker
+    uses: clambin/workflows/.github/workflows/release.yaml@main

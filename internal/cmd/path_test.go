@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func Test_makeRelativePath(t *testing.T) {
@@ -71,6 +72,7 @@ func Test_shouldUpdate(t *testing.T) {
 	require.NoError(t, err)
 	defer func(tmpdir string) { _ = os.RemoveAll(tmpdir) }(tmpdir)
 	require.NoError(t, os.WriteFile(filepath.Join(tmpdir, "file1"), []byte("content"), 0644))
+	time.Sleep(5 * time.Second)
 	require.NoError(t, os.WriteFile(filepath.Join(tmpdir, "file2"), []byte("content"), 0644))
 
 	type args struct {
