@@ -25,7 +25,7 @@ var (
 			if err != nil {
 				return fmt.Errorf("unable to load ansible inventory file: %w", err)
 			}
-			if err = addToInventory(&inv, args[0], args[1], args[2], l); err != nil {
+			if err = addToInventory(&inv, args[0], args[1], args[2], viper.GetViper(), l); err != nil {
 				return fmt.Errorf("failed to add secret: %w", err)
 			}
 			return inv.WriteToFile(viper.GetString("inventory"))
@@ -33,21 +33,15 @@ var (
 	}
 )
 
-func addToInventory(inv *inventory.Inventory, source, destination, namespace string, l *slog.Logger) (err error) {
+func addToInventory(inv *inventory.Inventory, source, destination, namespace string, v *viper.Viper, l *slog.Logger) (err error) {
 	secret := inventory.Secret{
 		Source:      source,
 		Destination: destination,
 		Namespace:   namespace,
 	}
 
-	// check the target directory is writeable
-	fInfo, err := os.Stat(filepath.Dir(secret.Destination))
-	if err != nil || !fInfo.IsDir() {
-		return fmt.Errorf("invalid directory for %s", secret.Destination)
-	}
-
 	// check that source is below SecretsDir
-	if secret.Source, err = makeRelativePath(filepath.Join(viper.GetString("ansible"), inv.SecretsDir), secret.Source); err != nil {
+	if secret.Source, err = makeRelativePath(filepath.Join(v.GetString("ansible"), inv.SecretsDir), secret.Source); err != nil {
 		return fmt.Errorf("source does not appear to be below secrets subdirectory: %w", err)
 	}
 	if escapes(secret.Source) {
@@ -55,11 +49,16 @@ func addToInventory(inv *inventory.Inventory, source, destination, namespace str
 	}
 
 	// check that destination is below DestinationDir
-	if secret.Destination, err = makeRelativePath(filepath.Join(viper.GetString("ansible"), inv.DestinationDir), secret.Destination); err != nil {
+	if secret.Destination, err = makeRelativePath(filepath.Join(v.GetString("ansible"), inv.DestinationDir), secret.Destination); err != nil {
 		return fmt.Errorf("destination does not appear to be below destinations subdirectory: %w", err)
 	}
 	if escapes(secret.Destination) {
 		l.Warn("sealed secret isn't below manifests directory " + inv.DestinationDir)
+	}
+	// check the target directory is writeable
+	fInfo, err := os.Stat(filepath.Dir(filepath.Join(v.GetString("ansible"), inv.DestinationDir, secret.Destination)))
+	if err != nil || !fInfo.IsDir() {
+		return fmt.Errorf("invalid directory for %s", secret.Destination)
 	}
 
 	// read the secret
