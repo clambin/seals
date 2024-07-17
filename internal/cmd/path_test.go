@@ -17,7 +17,6 @@ func Test_makeRelativePath(t *testing.T) {
 		getWd   func() (string, error)
 		want    string
 		wantErr assert.ErrorAssertionFunc
-		wantOK  assert.BoolAssertionFunc
 	}{
 		{
 			name:    "inside",
@@ -26,7 +25,6 @@ func Test_makeRelativePath(t *testing.T) {
 			getWd:   func() (string, error) { return "/mnt/staging/secrets", nil },
 			want:    "secrets/secret.yaml",
 			wantErr: assert.NoError,
-			wantOK:  assert.False,
 		},
 		{
 			name:    "below",
@@ -35,7 +33,6 @@ func Test_makeRelativePath(t *testing.T) {
 			getWd:   func() (string, error) { return "/mnt/staging", nil },
 			want:    "secrets/secret.yaml",
 			wantErr: assert.NoError,
-			wantOK:  assert.False,
 		},
 		{
 			name:    "outside",
@@ -44,7 +41,6 @@ func Test_makeRelativePath(t *testing.T) {
 			getWd:   func() (string, error) { return "/mnt", nil },
 			want:    "../secrets/secret.yaml",
 			wantErr: assert.NoError,
-			wantOK:  assert.True,
 		},
 		{
 			name:    "failure",
@@ -52,7 +48,6 @@ func Test_makeRelativePath(t *testing.T) {
 			source:  "secrets/secret.yaml",
 			getWd:   func() (string, error) { return "", os.ErrNotExist },
 			wantErr: assert.Error,
-			wantOK:  assert.False,
 		},
 	}
 
@@ -62,7 +57,6 @@ func Test_makeRelativePath(t *testing.T) {
 			path, err := makeRelativePath(tt.base, tt.source)
 			assert.Equal(t, tt.want, path)
 			tt.wantErr(t, err)
-			tt.wantOK(t, escapes(path))
 		})
 	}
 }
@@ -117,4 +111,18 @@ func Test_shouldUpdate(t *testing.T) {
 			tt.wantErr(t, err)
 		})
 	}
+}
+
+func Test_isWritableDirectory(t *testing.T) {
+	tmpdir, err := initFS()
+	require.NoError(t, err)
+	defer func() { _ = os.RemoveAll(tmpdir) }()
+
+	require.NoError(t, os.WriteFile(filepath.Join(tmpdir, "not-a-directory"), []byte(""), 0644))
+	require.NoError(t, os.Mkdir(filepath.Join(tmpdir, "read-only"), 0555))
+
+	assert.NoError(t, isWritableDirectory(filepath.Join(tmpdir, "manifests")))
+	assert.Error(t, isWritableDirectory(filepath.Join(tmpdir, "missing")))
+	assert.Error(t, isWritableDirectory(filepath.Join(tmpdir, "not-a-directory")))
+	assert.Error(t, isWritableDirectory(filepath.Join(tmpdir, "read-only")))
 }

@@ -1,7 +1,6 @@
 package inventory
 
 import (
-	"fmt"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -50,15 +49,6 @@ func (i *Inventory) WriteToFile(filename string) error {
 		_ = f.Close()
 	}
 	return err
-}
-
-func (i *Inventory) List(w io.Writer) error {
-	for _, secret := range i.Secrets {
-		if _, err := fmt.Fprintf(w, "%s => %s (%s)\n", secret.Source, secret.Destination, secret.Namespace); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (i *Inventory) Add(secret Secret) {

@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -21,57 +22,54 @@ var (
 			if len(args) != 3 {
 				return fmt.Errorf("expected 3 arguments, got %d", len(args))
 			}
-			inv, err := inventory.ReadFromFile(viper.GetString("inventory"))
+			inventoryFile := viper.GetString("inventory")
+			inv, err := inventory.ReadFromFile(inventoryFile)
 			if err != nil {
 				return fmt.Errorf("unable to load ansible inventory file: %w", err)
 			}
 			if err = addToInventory(&inv, args[0], args[1], args[2], viper.GetViper(), l); err != nil {
 				return fmt.Errorf("failed to add secret: %w", err)
 			}
-			return inv.WriteToFile(viper.GetString("inventory"))
+			return inv.WriteToFile(inventoryFile)
 		},
 	}
 )
 
-func addToInventory(inv *inventory.Inventory, source, destination, namespace string, v *viper.Viper, l *slog.Logger) (err error) {
-	secret := inventory.Secret{
-		Source:      source,
-		Destination: destination,
-		Namespace:   namespace,
-	}
-
-	// check that source is below SecretsDir
-	if secret.Source, err = makeRelativePath(filepath.Join(v.GetString("ansible"), inv.SecretsDir), secret.Source); err != nil {
-		return fmt.Errorf("source does not appear to be below secrets subdirectory: %w", err)
-	}
-	if escapes(secret.Source) {
-		l.Warn("secret isn't below secrets directory " + inv.SecretsDir)
-	}
-
-	// check that destination is below DestinationDir
-	if secret.Destination, err = makeRelativePath(filepath.Join(v.GetString("ansible"), inv.DestinationDir), secret.Destination); err != nil {
-		return fmt.Errorf("destination does not appear to be below destinations subdirectory: %w", err)
-	}
-	if escapes(secret.Destination) {
-		l.Warn("sealed secret isn't below manifests directory " + inv.DestinationDir)
-	}
-	// check the target directory is writeable
-	fInfo, err := os.Stat(filepath.Dir(filepath.Join(v.GetString("ansible"), inv.DestinationDir, secret.Destination)))
-	if err != nil || !fInfo.IsDir() {
-		return fmt.Errorf("invalid directory for %s", secret.Destination)
-	}
-
-	// read the secret
+func addToInventory(inv *inventory.Inventory, source, destination, namespace string, v *viper.Viper, l *slog.Logger) error {
+	// check source is readable
 	namespaceFromSecret, err := getNamespaceFromSecret(source)
 	if err != nil {
 		return fmt.Errorf("unable to read secret %q: %w", source, err)
 	}
-
-	// check namespace
-	if namespaceFromSecret != secret.Namespace {
-		l.Warn("secret namespace doesn't match command line argument", "secret", namespaceFromSecret, "namespace", secret.Namespace)
+	// if source secret namespace is set and differs from namespace, give a warning
+	if namespaceFromSecret != "" && namespaceFromSecret != namespace {
+		l.Warn("secret namespace doesn't match command line argument. Ignoring command line argument", "secret", namespaceFromSecret, "namespace", namespace)
+		namespace = namespaceFromSecret
 	}
 
+	// check destination dir is writable
+	if err = isWritableDirectory(filepath.Dir(destination)); err != nil {
+		return fmt.Errorf("unable to check if destination directory exists: %w", err)
+	}
+
+	// make secret with relative paths
+	secret := inventory.Secret{Namespace: namespace}
+	if secret.Source, err = makeRelativePath(filepath.Join(v.GetString("ansible"), inv.SecretsDir), source); err != nil {
+		return fmt.Errorf("failed to make relative path: %w", err)
+	}
+	if secret.Destination, err = makeRelativePath(filepath.Join(v.GetString("ansible"), inv.DestinationDir), destination); err != nil {
+		return fmt.Errorf("failed to make relative path: %w", err)
+	}
+
+	// if paths escape, warn
+	if strings.HasPrefix(secret.Source, ".."+string(os.PathSeparator)) {
+		l.Warn("secret isn't below secrets directory " + inv.SecretsDir)
+	}
+	if strings.HasPrefix(secret.Destination, ".."+string(os.PathSeparator)) {
+		l.Warn("sealed secret isn't below manifests directory " + inv.DestinationDir)
+	}
+
+	// add the secret
 	inv.Add(secret)
 	return nil
 }

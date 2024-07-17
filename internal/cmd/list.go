@@ -5,7 +5,6 @@ import (
 	"github.com/clambin/seals/internal/inventory"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 )
 
 var (
@@ -14,10 +13,12 @@ var (
 		Short: "Lists all secrets",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inv, err := inventory.ReadFromFile(viper.GetString("inventory"))
-			if err != nil {
-				return fmt.Errorf("unable to load ansible inventory file: %w", err)
+			if err == nil {
+				for _, secret := range inv.Secrets {
+					fmt.Printf("%s => %s (%s)\n", secret.Source, secret.Destination, secret.Namespace)
+				}
 			}
-			return inv.List(os.Stdout)
+			return err
 		},
 	}
 )

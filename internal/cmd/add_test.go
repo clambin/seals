@@ -33,6 +33,16 @@ func Test_addToInventory(t *testing.T) {
 			wantSecret:   inventory.Secret{Source: "secret.yaml", Destination: "sealed-secret.yaml", Namespace: "default"},
 		},
 		{
+			name:         "different namespace",
+			inv:          inventory.Inventory{SecretsDir: "../secrets", DestinationDir: "../manifests"},
+			source:       "secrets/secret.yaml",
+			destination:  "manifests/sealed-secret.yaml",
+			namespace:    "not-default",
+			secretExists: true,
+			wantErr:      assert.NoError,
+			wantSecret:   inventory.Secret{Source: "secret.yaml", Destination: "sealed-secret.yaml", Namespace: "default"},
+		},
+		{
 			name:         "secret missing",
 			inv:          inventory.Inventory{SecretsDir: "../secrets", DestinationDir: "../manifests"},
 			source:       "secrets/secret.yaml",
@@ -78,7 +88,7 @@ func Test_addToInventory(t *testing.T) {
 			if tt.secretExists {
 				require.NoError(t, os.WriteFile(source, []byte(`kind: Secret
 metadata:
-  namespace: `+tt.namespace+`
+  namespace: default
 `), 0644))
 			}
 

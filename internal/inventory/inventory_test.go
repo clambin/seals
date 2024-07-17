@@ -21,11 +21,9 @@ secrets: []
 	assert.False(t, inv.Delete("foo.yaml"))
 	inv.Add(inventory.Secret{Source: "foo.yaml", Destination: "sealed-foo.yaml", Namespace: "default"})
 
-	var out bytes.Buffer
-	_ = inv.List(&out)
-	assert.Equal(t, "foo.yaml => sealed-foo.yaml (default)\n", out.String())
+	assert.Equal(t, []inventory.Secret{{Source: "foo.yaml", Destination: "sealed-foo.yaml", Namespace: "default"}}, inv.Secrets)
 
-	out.Reset()
+	var out bytes.Buffer
 	assert.NoError(t, inv.Write(&out))
 	assert.Equal(t, `secrets_dir: ../../secrets
 destination_dir: ../manifests
