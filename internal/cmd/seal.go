@@ -114,7 +114,7 @@ func initClient() clientcmd.ClientConfig {
 }
 
 func (s *kubeSealer) getPublicKey() error {
-	r, err := kubeseal.OpenCert(context.Background(), s.clientConfig, "sealed-secrets", "sealed-secrets", "")
+	r, err := kubeseal.OpenCert(context.Background(), s.clientConfig, s.controllerName, s.controllerNamespace, "")
 	if err == nil {
 		s.publicKey, err = kubeseal.ParseKey(r)
 		_ = r.Close()
