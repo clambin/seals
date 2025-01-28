@@ -62,9 +62,7 @@ func Test_makeRelativePath(t *testing.T) {
 }
 
 func Test_shouldUpdate(t *testing.T) {
-	tmpdir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer func(tmpdir string) { _ = os.RemoveAll(tmpdir) }(tmpdir)
+	tmpdir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(tmpdir, "file1"), []byte("content"), 0644))
 	require.NoError(t, os.Chtimes(filepath.Join(tmpdir, "file1"), time.Now(), time.Now().Add(-time.Hour)))
 	require.NoError(t, os.WriteFile(filepath.Join(tmpdir, "file2"), []byte("content"), 0644))
@@ -114,9 +112,8 @@ func Test_shouldUpdate(t *testing.T) {
 }
 
 func Test_isWritableDirectory(t *testing.T) {
-	tmpdir, err := initFS()
-	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpdir) }()
+	tmpdir := t.TempDir()
+	require.NoError(t, initFS(tmpdir))
 
 	require.NoError(t, os.WriteFile(filepath.Join(tmpdir, "not-a-directory"), []byte(""), 0644))
 	require.NoError(t, os.Mkdir(filepath.Join(tmpdir, "read-only"), 0555))

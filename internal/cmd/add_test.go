@@ -73,9 +73,8 @@ func Test_addToInventory(t *testing.T) {
 	}
 
 	logger := slog.Default()
-	tmpdir, err := initFS()
-	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpdir) }()
+	tmpdir := t.TempDir()
+	require.NoError(t, initFS(tmpdir))
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -108,15 +107,11 @@ metadata:
 	}
 }
 
-func initFS() (string, error) {
-	tmpdir, err := os.MkdirTemp("", "")
-	if err != nil {
-		return "", err
-	}
+func initFS(tmpdir string) error {
 	for _, directory := range []string{"secrets", "manifests", "ansible"} {
-		if err = os.Mkdir(filepath.Join(tmpdir, directory), 0755); err != nil {
-			return "", err
+		if err := os.Mkdir(filepath.Join(tmpdir, directory), 0755); err != nil {
+			return err
 		}
 	}
-	return tmpdir, nil
+	return nil
 }

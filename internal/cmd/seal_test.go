@@ -19,9 +19,7 @@ import (
 )
 
 func Test_seal(t *testing.T) {
-	tmpdir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpdir) }()
+	tmpdir := t.TempDir()
 
 	v := viper.New()
 	v.Set("ansible", tmpdir)
