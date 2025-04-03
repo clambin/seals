@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"codeberg.org/clambin/go-common/charmer"
 	"fmt"
-	"github.com/clambin/go-common/charmer"
 	"github.com/clambin/seals/internal/inventory"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

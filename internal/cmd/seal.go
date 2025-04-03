@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"codeberg.org/clambin/go-common/charmer"
 	"context"
 	"crypto/rsa"
 	"fmt"
 	"github.com/bitnami-labs/sealed-secrets/pkg/apis/sealedsecrets/v1alpha1"
 	"github.com/bitnami-labs/sealed-secrets/pkg/kubeseal"
-	"github.com/clambin/go-common/charmer"
 	"github.com/clambin/seals/internal/inventory"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

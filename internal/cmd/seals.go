@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/clambin/go-common/charmer"
+	"codeberg.org/clambin/go-common/charmer"
 	"github.com/clambin/seals/internal/clilogger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
