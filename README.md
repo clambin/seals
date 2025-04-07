@@ -5,6 +5,8 @@
 [![go report card](https://goreportcard.com/badge/github.com/clambin/seals)](https://goreportcard.com/report/github.com/clambin/seals)
 [![license](https://img.shields.io/github/license/clambin/seals?style=plastic)](LICENSE.md)
 
+Deprecated: moved to https://codeberg.org/clambin/seals
+
 Utility to manage Sealed Secrets (http://github.com/bitnami-labs/sealed-secrets).
 
 ## Authors
